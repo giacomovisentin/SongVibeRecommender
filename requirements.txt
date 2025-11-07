@@ -1,0 +1,6 @@
+flask
+pandas
+numpy
+scikit-learn
+pyarrow
+gunicorn  # Questo è il server web che Render userà
