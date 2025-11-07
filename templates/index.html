@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Recommender</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 40px auto; background: #f4f7f6; color: #333; }
+        h1 { text-align: center; color: #1DB954; }
+        #search-form { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; }
+        button { padding: 12px; font-size: 16px; background: #1DB954; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1ED760; }
+        #results-container { margin-top: 20px; }
+        #status-message { text-align: center; color: #888; font-size: 1.1em; }
+        .recommendation { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .recommendation h3 { margin: 0 0 5px 0; color: #111; }
+        .recommendation p { margin: 0; font-size: 0.95em; color: #555; }
+        .recommendation p.genres { font-size: 0.85em; color: #777; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h1>🎵 Music Recommender</h1>
+
+    <form id="search-form">
+        <input type="text" id="song-title" placeholder="Titolo Canzone (es. Where Is The Love?)" required>
+        <input type="text" id="artist-name" placeholder="Artista (es. The Black Eyed Peas)" required>
+        <button type="submit">Trova Raccomandazioni</button>
+    </form>
+
+    <div id="results-container">
+        <p id="status-message">Inserisci una canzone e un artista per iniziare.</p>
+    </div>
+
+    <script>
+        const form = document.getElementById('search-form');
+        const titleInput = document.getElementById('song-title');
+        const artistInput = document.getElementById('artist-name');
+        const resultsContainer = document.getElementById('results-container');
+        const statusMessage = document.getElementById('status-message');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const title = titleInput.value;
+            const artist = artistInput.value;
+
+            statusMessage.textContent = "Sto cercando... 🎶";
+            resultsContainer.innerHTML = ''; 
+
+            try {
+                const response = await fetch('/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, artist: artist })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'error') {
+                    throw new Error(data.message);
+                }
+                displayRecommendations(data.recommendations);
+
+            } catch (error) {
+                statusMessage.textContent = `Errore: ${error.message}`;
+            }
+        });
+
+        function displayRecommendations(recs) {
+            statusMessage.textContent = '';
+            resultsContainer.innerHTML = '';
+
+            if (recs.length === 0) {
+                statusMessage.textContent = "Nessuna raccomandazione trovata.";
+                return;
+            }
+
+            recs.forEach(song => {
+                const songElement = document.createElement('div');
+                songElement.className = 'recommendation';
+                
+                const similarity = (song.similarity * 100).toFixed(1);
+
+                songElement.innerHTML = `
+                    <h3>${song.track_name}</h3>
+                    <p><strong>Artista:</strong> ${song.artist_name}</p>
+                    <p class="genres"><strong>Genere:</strong> ${song.genres}</p>
+                    <p><strong>Similarità:</strong> ${similarity}%</p>
+                `;
+                resultsContainer.appendChild(songElement);
+            });
+        }
+    </script>
+</body>
+</html>
