@@ -19,6 +19,10 @@ emb = np.load(EMB_PATH)
 X = pd.read_parquet(META_PATH).reset_index(drop=True)
 GENRE_COLS = [c for c in X.columns if c.startswith("genre_")]
 
+# Check for track_id, essential for Spotify links
+if "track_id" not in X.columns:
+    raise ValueError("FATAL: 'track_id' not found in song_metadata.parquet. Please re-run data saving script.")
+
 # Lowercase columns for quick substring search
 X["_track_lower"] = X["track_name"].fillna("").str.lower()
 X["_artist_lower"] = X["artist_name"].fillna("").str.lower()
@@ -39,6 +43,7 @@ def suggest():
     results = [
         {
             "index": int(i),
+            "track_id": r["track_id"], # Send track_id
             "track_name": r["track_name"],
             "artist_name": r["artist_name"]
         }
@@ -65,10 +70,14 @@ def recommend():
 
     recs["genres"] = recs.apply(extract_genres, axis=1)
 
-    results = recs[["track_name", "artist_name", "genres", "similarity"]].to_dict(orient="records")
+    # Send track_id for recommendations
+    results = recs[["track_id", "track_name", "artist_name", "genres", "similarity"]].to_dict(orient="records")
+    
+    selected_row = X.loc[idx]
     selected = {
-        "track_name": X.loc[idx, "track_name"],
-        "artist_name": X.loc[idx, "artist_name"]
+        "track_id": selected_row["track_id"], # Send track_id for selected song
+        "track_name": selected_row["track_name"],
+        "artist_name": selected_row["artist_name"]
     }
     return jsonify({"status": "success", "selected": selected, "recommendations": results})
 
