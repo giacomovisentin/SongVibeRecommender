@@ -13,8 +13,7 @@ https://music-recommender-xyh1.onrender.com
 Please Note: The backend is hosted on Render's free tier. If the app hasn't been used in 15 minutes, it "sleeps" to save resources. It may take about 60 seconds to load the first time you visit it. Please be patient!
 
 App Screenshot
-
-(Inserisci qui uno screenshot della tua app! Sostituisci questo testo)
+<img width="717" height="645" alt="Screenshot 2025-11-09 alle 11 51 04" src="https://github.com/user-attachments/assets/a3fc0326-8bf8-4c93-a82e-8afd3fb74f57" />
 
 ⚙️ How It Works
 
