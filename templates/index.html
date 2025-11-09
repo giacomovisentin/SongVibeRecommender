@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Music Recommender</title>
   <style>
-    /* I CSS sono stati mantenuti dalla tua versione 'bella' */
     :root {
       --bg-color: #121212;
       --card-color: #181818;
@@ -46,7 +45,7 @@
       width: 100%;
       padding: 14px 18px;
       font-size: 1rem;
-      border-radius: 50px;
+      border-radius: 50px; /* Rounded search bar */
       border: 1px solid transparent;
       background: var(--hover-color);
       color: var(--text-color);
@@ -73,9 +72,6 @@
       padding: 12px 16px;
       cursor: pointer;
       border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 12px;
       transition: background-color 0.2s;
     }
     .suggestion:last-child {
@@ -88,21 +84,6 @@
       font-size: 0.9rem;
       color: var(--text-color-light);
     }
-    .album-placeholder {
-      width: 40px;
-      height: 40px;
-      flex-shrink: 0;
-      background: var(--hover-color);
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-color-light);
-    }
-    .album-placeholder svg {
-      width: 20px;
-      height: 20px;
-    }
     
     /* Selected Song */
     #selected-song {
@@ -114,15 +95,6 @@
       align-items: center;
       gap: 16px;
       border: 1px solid var(--border-color);
-    }
-    #selected-song .album-placeholder {
-      width: 80px;
-      height: 80px;
-      border-radius: 8px;
-    }
-    #selected-song .album-placeholder svg {
-      width: 36px;
-      height: 36px;
     }
     #selected-song .track-info {
       flex-grow: 1;
@@ -152,23 +124,13 @@
     .rec-card:hover {
       background: var(--hover-color);
     }
-    .rec-card .album-placeholder {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 1 / 1;
-      margin-bottom: 12px;
-      border-radius: 8px;
-    }
-    .rec-card .album-placeholder svg {
-      width: 50%;
-      height: 50%;
-    }
     .rec-card .track-name {
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: block;
+      display: block; /* for ellipsis */
+      margin-bottom: 4px; /* Added spacing */
     }
     .rec-card .artist-name {
       font-size: 0.9rem;
@@ -176,7 +138,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: block;
+      display: block; /* for ellipsis */
       margin-bottom: 12px;
     }
     .spotify-link {
@@ -205,14 +167,6 @@
 </head>
 <body>
 
-  <svg width="0" height="0" style="display:none;">
-    <symbol id="music-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 18V5l12-2v13"></path>
-      <circle cx="6" cy="18" r="3"></circle>
-      <circle cx="18" cy="16" r="3"></circle>
-    </symbol>
-  </svg>
-
   <div class="container">
     <h1>Music Recommender</h1>
     <div class="search-box">
@@ -227,26 +181,22 @@
   </div>
 
   <script>
-    // Configurazione dell'URL base di Spotify per il link alla traccia
-    const SPOTIFY_BASE_URL = "https://open.spotify.com/track/";
-    const API_URL = ''; // Usiamo un percorso relativo per Flask (es. /suggest)
-
     const search = document.getElementById('search');
     const suggestionsBox = document.getElementById('suggestions');
     const recsDiv = document.getElementById('recommendations');
     const recsTitle = document.getElementById('rec-title');
     const selectedDiv = document.getElementById('selected-song');
+    let currentSuggestions = [];
     
-    // Icon template
-    const musicIcon = `<div class="album-placeholder"><svg><use href="#music-note"></use></svg></div>`;
+    // Constante icona rimossa
 
     async function fetchSuggestions(q) {
-      const res = await fetch(`${API_URL}/suggest?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/suggest?q=${encodeURIComponent(q)}`);
       return res.ok ? res.json() : [];
     }
 
     async function fetchRecommendations(index) {
-      const res = await fetch(`${API_URL}/recommend`, {
+      const res = await fetch('/recommend', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({index})
@@ -261,6 +211,7 @@
         return;
       }
       const data = await fetchSuggestions(q);
+      currentSuggestions = data;
       renderSuggestions(data);
     });
 
@@ -270,12 +221,11 @@
         suggestionsBox.style.display = 'none';
         return;
       }
-      list.forEach((item) => {
+      list.forEach((item, i) => {
         const div = document.createElement('div');
         div.className = 'suggestion';
-        
+        // Icona rimossa da qui
         div.innerHTML = `
-          ${musicIcon}
           <div>
             <strong>${item.track_name}</strong>
             <div class="meta">${item.artist_name}</div>
@@ -291,43 +241,39 @@
       suggestionsBox.style.display = 'none';
       search.value = `${item.track_name} - ${item.artist_name}`;
       
-      recsDiv.innerHTML = '<div class="meta" style="text-align:center;">Caricamento...</div>';
+      recsDiv.innerHTML = '<div class="meta" style="text-align:center;">Loading...</div>'; // Loading state
       selectedDiv.style.display = 'none';
       recsTitle.style.display = 'none';
 
       const data = await fetchRecommendations(item.index);
       if (!data || data.status !== 'success') {
-        recsDiv.innerHTML = '<div class="meta" style="text-align:center; color: #ff4d4d;">Errore nel caricamento delle raccomandazioni.</div>';
+        recsDiv.innerHTML = '<div class="meta" style="text-align:center; color: #ff4d4d;">Error loading recommendations.</div>';
         return;
       }
       
-      // Render selected song card
+      const spotifyBaseUrl = "https://open.spotify.com/track/";
+
+      // Render selected song card (icona rimossa)
       selectedDiv.style.display = 'flex';
       selectedDiv.innerHTML = `
-        <div class="album-placeholder">
-          <svg><use href="#music-note"></use></svg>
-        </div>
         <div class="track-info">
           <h3>${data.selected.track_name}</h3>
           <div class="meta">${data.selected.artist_name}</div>
         </div>
-        <a href="${SPOTIFY_BASE_URL}${data.selected.track_id}" target="_blank" class="spotify-link">Ascolta</a>
+        <a href="${spotifyBaseUrl}${data.selected.track_id}" target="_blank" class="spotify-link">Listen</a>
       `;
 
-      // Render recommendation cards
+      // Render recommendation cards (icona rimossa)
       recsTitle.style.display = 'block';
       recsDiv.innerHTML = '';
       data.recommendations.forEach(rec => {
         const div = document.createElement('div');
         div.className = 'rec-card';
         div.innerHTML = `
-          <div class="album-placeholder">
-            <svg><use href="#music-note"></use></svg>
-          </div>
           <span class="track-name">${rec.track_name}</span>
           <span class="artist-name">${rec.artist_name}</span>
-          <a href="${SPOTIFY_BASE_URL}${rec.track_id}" target="_blank" class="spotify-link">Ascolta</a>
-          <div class="similarity">${(rec.similarity*100).toFixed(0)}% Simile</div>
+          <a href="${spotifyBaseUrl}${rec.track_id}" target="_blank" class="spotify-link">Listen</a>
+          <div class="similarity">${(rec.similarity*100).toFixed(0)}% Similar</div>
         `;
         recsDiv.appendChild(div);
       });
@@ -335,7 +281,7 @@
 
     // Close suggestions when clicking outside
     document.addEventListener('click', (e)=>{
-      if (!search.contains(e.target) && !suggestionsBox.contains(e.target)) {
+      if (!suggestionsBox.contains(e.target) && e.target !== search) {
         suggestionsBox.style.display = 'none';
       }
     });
